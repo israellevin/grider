@@ -1,2 +1,3 @@
 # grider
-Helper for playing a solitaire card game
+
+Helper for playing a solitaire card game.

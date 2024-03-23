@@ -1,73 +1,52 @@
 #!/usr/bin/env python3
 'Solitaire card game.'
 import random
-
-
-def make_deck():
-    return list(range(2, 15)) * 4
-
-
-def deal(deck):
-    return deck.pop(random.randint(0, len(deck) - 1))
-
-
-def make_table(deck):
-    return [deal(deck) for _ in range(9)]
-
-
-def play_round(table, deck, index, is_high):
-    new_card = deal(deck)
-    if table[index] - new_card > 0 != is_high:
-        table.pop(index)
-        return False
-    table[index] = new_card
-    return True
-
-
-def odds(table, deck):
-    results = []
-    for spot in table:
-        lows = 0
-        for card in deck:
-            if spot - card > 0:
-                lows += 1
-        results.append(lows - (len(deck) / 2))
-    return results
-
-
-def play_game():
-    deck = make_deck()
-    table = make_table(deck)
-    while len(table) > 0 and len(deck) > 0:
-        results = odds(table, deck)
-        scores = [abs(result) for result in results]
-        best_spot = scores.index(max(scores))
-    return len(deck)
-
-
-class Deck:
-    def __init__(self):
-        self.cards = make_deck()
-
-    def deal(self):
-        return self.cards.pop(random.randint(0, len(self.cards) - 1))
-
-    def draw(self, card):
-        return self.cards.pop(self.cards.index(card))
-
-    def draw_many(self, cards):
-        for card in cards:
-            self.draw(card)
+import sys
 
 
 class Game:
-    def __init__(self, table=None):
-        self.deck = Deck()
-        self.table = table if table else make_table(self.deck.cards)
-        self.deck.draw_many(self.table)
 
-    def get_best_move(self):
-        results = odds(self.table, self.deck.cards)
+    def __init__(self, table=None):
+        self.deck = list(range(2, 15)) * 4
+        self.table = self.draw_many(table) if table else [self.draw() for _ in range(9)]
+
+    def draw(self, card=None):
+        if not card:
+            card = random.choice(self.deck)
+        return self.deck.pop(self.deck.index(card))
+
+    def draw_many(self, cards):
+        return [self.draw(card) for card in cards]
+
+    def recommend(self):
+        results = []
+        for spot in self.table:
+            lows = 0
+            for card in self.deck:
+                if spot - card > 0:
+                    lows += 1
+            results.append(lows - (len(self.deck) / 2))
         scores = [abs(result) for result in results]
         best_spot = scores.index(max(scores))
         return best_spot, results[best_spot] > 0
+
+    def play_round(self, index, is_high, new_card=None):
+        new_card = self.draw(new_card)
+        if (self.table[index] > new_card) != is_high:
+            self.table.pop(index)
+            return False
+        self.table[index] = new_card
+        return True
+
+
+def play_game():
+    game = Game()
+    while len(game.table) > 0 and len(game.deck) > 0:
+        game.play_round(*game.recommend())
+    return len(game.deck)
+
+
+if __name__ == '__main__':
+    num_games = int(sys.argv[1]) if len(sys.argv) > 1 else 10**4
+    num_wins = sum([1 if play_game() == 0 else 0 for _ in range(num_games)])
+    print(f'{num_wins} wins out of {num_games} games.')

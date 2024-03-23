@@ -32,21 +32,44 @@ class Game:
         self.frame.grid()
         self.table = ttk.Frame(self.frame)
         self.table.grid()
+
+        self.available_cards = list(CARD_UI_TO_LOGIC.keys())
+
         self.spots = []
         for row in range(3):
             for column in range(3):
-                spot = ttk.Combobox(self.table, values=list(CARD_UI_TO_LOGIC.keys()), state='readonly')
+                spot = ttk.Combobox(self.table, values=self.available_cards, state='readonly')
                 spot.grid(column=column, row=row)
                 spot.bind('<<ComboboxSelected>>', self.validate)
                 self.spots.append(spot)
+        ttk.Style().configure('red.TCombobox', foreground='red')
+        ttk.Style().configure('blue.TCombobox', foreground='blue')
+
         self.button = ttk.Button(self.frame, text="Auto", command=self.auto)
         self.button.grid(column=4, row=4)
 
+    def update_available_cards(self, available_cards):
+        self.available_cards = available_cards
+        for spot in self.spots:
+            spot.configure(values=self.available_cards)
+
     def validate(self, _):
+        found_cards = {card: 0 for card in CARD_UI_TO_LOGIC.keys()}
+        available_cards = list(CARD_UI_TO_LOGIC.keys())
+        valid = True
         for spot in self.spots:
             if not spot.get():
-                return
-        self.start([CARD_UI_TO_LOGIC[spot.get()] for spot in self.spots])
+                valid = False
+            else:
+                found_cards[spot.get()] += 1
+                if found_cards[spot.get()] > 4:
+                    print(f"Too many {spot.get()} cards")
+                    valid = False
+                elif found_cards[spot.get()] == 4:
+                    available_cards.remove(spot.get())
+        self.update_available_cards(available_cards)
+        if valid:
+            self.start([CARD_UI_TO_LOGIC[spot.get()] for spot in self.spots])
 
     def auto(self):
         self.start()
@@ -62,22 +85,27 @@ class Game:
 
     def recommend(self):
         self.button.configure(state='disabled')
-        best_spot, is_low = self.logic.get_best_move()
+        best_spot, is_low = self.logic.recommend()
         self.recommendation = best_spot, is_low
         spot = self.spots[best_spot]
-        spot.set('L' if is_low else 'H')
         spot.configure(state='readonly')
+        if(is_low):
+            spot.set(f"{spot.get()} (-)")
+            spot.configure(style='red.TCombobox')
+        else:
+            spot.set(f"{spot.get()} (+)")
+            spot.configure(style='blue.TCombobox')
         spot.bind('<<ComboboxSelected>>', self.next_card)
 
     def next_card(self, event):
         spot = event.widget
         spot.unbind('<<ComboboxSelected>>')
-        spot.configure(state='disabled')
+        spot.configure(state='disabled', style='')
         self.button.configure(state='normal')
-        if self.logic.play_round(*self.recommendation, CARD_UI_TO_LOGIC[spot.get()]):
-            self.spots[self.recommendation[0]].set(CARD_LOGIC_TO_UI[self.logic.table[self.recommendation[0]]])
-        else:
-            self.spots[self.recommendation[0]].set('X')
+        if not self.logic.play_round(*self.recommendation, CARD_UI_TO_LOGIC[spot.get()]):
+            spot.set(f"{spot.get()} (X)")
+            self.spots.pop(self.recommendation[0])
+        self.update_available_cards([CARD_LOGIC_TO_UI[card] for card in set(self.logic.deck)])
 
 GAME = Game()
 ROOT.mainloop()

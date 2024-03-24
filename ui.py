@@ -61,10 +61,7 @@ class Game:
                 valid = False
             else:
                 found_cards[spot.get()] += 1
-                if found_cards[spot.get()] > 4:
-                    print(f"Too many {spot.get()} cards")
-                    valid = False
-                elif found_cards[spot.get()] == 4:
+                if found_cards[spot.get()] == 4:
                     available_cards.remove(spot.get())
         self.update_available_cards(available_cards)
         if valid:
@@ -86,11 +83,9 @@ class Game:
         spot = self.spots[best_spot]
         spot.configure(state='readonly')
         if(is_low):
-            print(spot, spot.get())
             spot.set(f"{spot.get()} (-)")
             spot.configure(style='lower.TCombobox')
         else:
-            print(f"-{spot.get()}-")
             spot.set(f"{spot.get()} (+)")
             spot.configure(style='higher.TCombobox')
         spot.bind('<<ComboboxSelected>>', self.next_card)

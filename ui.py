@@ -43,6 +43,10 @@ class Game:
                 spot.grid(column=column, row=row)
                 spot.bind('<<ComboboxSelected>>', self.validate)
                 self.spots.append(spot)
+        self.spot_sizes = [1] * 9
+        self.progress = -2
+        self.progress_label = ttk.Label(self.table, text=f"Progress: {self.progress}")
+        self.progress_label.grid(column=1, row=4)
 
         self.button = ttk.Button(self.frame, text="Auto", command=self.start)
         self.button.grid(column=4, row=4)
@@ -91,10 +95,13 @@ class Game:
         spot.bind('<<ComboboxSelected>>', self.next_card)
 
     def next_card(self, event):
+        self.spot_sizes[self.recommendation[0]] += 1
         spot = event.widget
         spot.unbind('<<ComboboxSelected>>')
         spot.configure(state='disabled', style='')
         if not self.logic.play_round(*self.recommendation, CARD_UI_TO_LOGIC[spot.get()]):
+            self.progress += 6 - self.spot_sizes[self.recommendation[0]]
+            self.progress_label.configure(text=f"Progress: {self.progress}")
             spot.set(f"{spot.get()} (X)")
             self.spots.pop(self.recommendation[0])
         self.recommend()

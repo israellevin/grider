@@ -47,6 +47,6 @@ def play_game():
 
 
 if __name__ == '__main__':
-    num_games = int(sys.argv[1]) if len(sys.argv) > 1 else 10**4
+    num_games = int(sys.argv[1]) if len(sys.argv) > 1 else 10**3
     num_wins = sum([1 if play_game() == 0 else 0 for _ in range(num_games)])
     print(f'{num_wins} wins out of {num_games} games.')
